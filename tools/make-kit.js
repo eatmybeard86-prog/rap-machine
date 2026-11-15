@@ -167,6 +167,12 @@ files.bell.push(save('bell_fm', bell({ ratio: 3.5, index: 3, dec: 0.7 })));
 fs.writeFileSync(path.join(out, 'LICENSE.txt'),
   'Rap Machine Pro Kit — synthesized by tools/make-kit.js.\nCC0 1.0 Universal: public domain, free for any use, no attribution required.\n');
 
-const index = [{ name: 'RM Pro (свой кит)', path: `kits/${KIT}/`, files, roots: { '808': 36, cowbell: 73, bell: 72 } }];
-fs.writeFileSync(path.join(__dirname, '..', 'kits', 'index.json'), JSON.stringify(index, null, 2));
+// Обновляем только свою запись в kits/index.json, остальные киты сохраняем
+const indexPath = path.join(__dirname, '..', 'kits', 'index.json');
+let index = [];
+try { index = JSON.parse(fs.readFileSync(indexPath, 'utf8')); } catch (e) {}
+const entry = { name: 'RM Pro (свой кит)', path: `kits/${KIT}/`, files, roots: { '808': 36, cowbell: 73, bell: 72 } };
+const at = index.findIndex(k => k.path === entry.path);
+if (at >= 0) index[at] = entry; else index.unshift(entry);
+fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
 console.log('Kit written to', out, Object.values(files).flat().length, 'files');

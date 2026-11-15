@@ -44,5 +44,77 @@
       "cowbell": 73,
       "bell": 72
     }
+  },
+  {
+    "name": "Roland TR-808 (CC0)",
+    "path": "kits/tr808/",
+    "files": {
+      "808": [
+        "808_bd0075.wav",
+        "808_bd1075.wav",
+        "808_bd2575.wav",
+        "808_bd5075.wav",
+        "808_bd7575.wav"
+      ],
+      "clap": [
+        "clap.wav"
+      ],
+      "cowbell": [
+        "cowbell.wav"
+      ],
+      "hat": [
+        "hat.wav"
+      ],
+      "kick": [
+        "kick_bd0000.wav",
+        "kick_bd0010.wav",
+        "kick_bd0025.wav",
+        "kick_bd1000.wav",
+        "kick_bd1010.wav",
+        "kick_bd1025.wav",
+        "kick_bd2500.wav",
+        "kick_bd2510.wav",
+        "kick_bd2525.wav",
+        "kick_bd5000.wav",
+        "kick_bd5010.wav",
+        "kick_bd5025.wav",
+        "kick_bd7500.wav",
+        "kick_bd7510.wav",
+        "kick_bd7525.wav"
+      ],
+      "ohat": [
+        "ohat_oh00.wav",
+        "ohat_oh10.wav",
+        "ohat_oh25.wav",
+        "ohat_oh50.wav",
+        "ohat_oh75.wav"
+      ],
+      "rim": [
+        "rim_claves.wav",
+        "rim_maracas.wav",
+        "rim_rs.wav"
+      ],
+      "snare": [
+        "snare_sd0010.wav",
+        "snare_sd0025.wav",
+        "snare_sd0050.wav",
+        "snare_sd1010.wav",
+        "snare_sd1025.wav",
+        "snare_sd1050.wav",
+        "snare_sd2510.wav",
+        "snare_sd2525.wav",
+        "snare_sd2550.wav",
+        "snare_sd5010.wav",
+        "snare_sd5025.wav",
+        "snare_sd5050.wav",
+        "snare_sd7510.wav",
+        "snare_sd7525.wav",
+        "snare_sd7550.wav"
+      ]
+    },
+    "roots": {
+      "808": 31.24,
+      "cowbell": 73
+    }
   }
 ]
