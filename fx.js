@@ -140,7 +140,7 @@ const STRIPS = [
 
 const MASTER = [
   { id: 'vocal', label: 'ГОЛОС', min: 0, max: 2, step: 0.01, def: 1 },
-  { id: 'beat', label: 'БИТ', min: 0, max: 1.5, step: 0.01, def: 0.8 },
+  { id: 'beat', label: 'БИТ', min: 0, max: 1.5, step: 0.01, def: 0.6 },
   { id: 'monitor', label: '🎧 СЛУХ', min: 0, max: 1.5, step: 0.01, def: 0 },
 ];
 

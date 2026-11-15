@@ -148,7 +148,7 @@ class BeatEngine {
   start(delay = 0.1) {
     this.stop(true);
     const c = this.ctx;
-    this.bus = c.createGain(); this.bus.connect(this.out);
+    this.bus = c.createGain(); this.bus.gain.value = 0.7; this.bus.connect(this.out);
     this.startTime = c.currentTime + delay;
     this.playing = true;
     if (this.custom) {

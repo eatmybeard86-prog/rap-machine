@@ -178,8 +178,15 @@ async function ensureAudio() {
   S.vocalOut.connect(S.mixBus);
   S.beatBus.connect(S.mixBus);
   S.mixBus.connect(S.recDest);
-  S.beatBus.connect(ctx.destination);
-  S.vocalOut.connect(S.monitor).connect(ctx.destination);
+  // Выход на колонки/наушники: срез глубокого баса (для колонок ноутбука) + лимитер против хрипа
+  S.outHP = ctx.createBiquadFilter(); S.outHP.type = 'highpass'; S.outHP.frequency.value = 20;
+  S.outLim = ctx.createDynamicsCompressor();
+  S.outLim.threshold.value = -6; S.outLim.knee.value = 3; S.outLim.ratio.value = 20;
+  S.outLim.attack.value = 0.002; S.outLim.release.value = 0.1;
+  S.outGain = ctx.createGain(); S.outGain.gain.value = 0.85;
+  S.outHP.connect(S.outLim).connect(S.outGain).connect(ctx.destination);
+  S.beatBus.connect(S.outHP);
+  S.vocalOut.connect(S.monitor).connect(S.outHP);
   S.anaV = ctx.createAnalyser(); S.anaV.fftSize = 1024; S.vocalOut.connect(S.anaV);
   S.anaM = ctx.createAnalyser(); S.anaM.fftSize = 1024; S.mixBus.connect(S.anaM);
   S.engine = new BeatEngine(ctx, S.beatBus);
@@ -191,7 +198,11 @@ function getMicId() { try { return localStorage.getItem('rm_mic') || ''; } catch
 
 function openMic(id) {
   return navigator.mediaDevices.getUserMedia({
-    audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    audio: {
+      deviceId: id ? { exact: id } : undefined,
+      // Через колонки включаем эхоподавление браузера, в наушниках — чистый сигнал
+      echoCancellation: !!S.speakerMode, noiseSuppression: !!S.speakerMode, autoGainControl: false,
+    },
   });
 }
 
@@ -217,8 +228,17 @@ async function fillMicList() {
 
 // Bluetooth-наушники при включении микрофона переключаются в режим гарнитуры,
 // и Windows меняет устройство вывода. Переподключаем вывод к текущему устройству.
+async function outputsSignature() {
+  const d = await navigator.mediaDevices.enumerateDevices();
+  return d.filter(x => x.kind === 'audiooutput').map(x => x.deviceId + x.label).join('|');
+}
+
 async function rebindOutput() {
   if (!S.ctx || !S.ctx.setSinkId) return;
+  const sig = await outputsSignature();
+  if (S.outSig === undefined) { S.outSig = sig; return; }
+  if (sig === S.outSig) return; // устройство вывода не менялось — ничего не трогаем
+  S.outSig = sig;
   try {
     await S.ctx.setSinkId({ type: 'none' });
     await S.ctx.setSinkId('');
@@ -236,7 +256,7 @@ async function ensureMic() {
     }
     attachMic(stream);
     await fillMicList();
-    setTimeout(rebindOutput, 400);
+    rebindOutput();
     if (values.monitor === 0) $('#monBanner').hidden = false;
     return true;
   } catch (e) {
@@ -487,12 +507,24 @@ $('#btnPlay').addEventListener('click', () => (S.mode === 'rehearse' ? stopSessi
 $('#btnRec').addEventListener('click', () => startSession('rec'));
 $('#btnStop').addEventListener('click', stopSession);
 $('#btnTest').addEventListener('click', testSound);
-$('#monYes').addEventListener('click', () => { setParam('monitor', 0.9); $('#monBanner').hidden = true; });
-$('#monNo').addEventListener('click', () => { $('#monBanner').hidden = true; });
+async function setSpeakerMode(on) {
+  S.speakerMode = on;
+  $('#monBanner').hidden = true;
+  if (S.outHP) S.outHP.frequency.setTargetAtTime(on ? 110 : 20, S.ctx.currentTime, 0.05);
+  setParam('monitor', on ? 0 : 0.8);
+  if (S.mic) {
+    try { attachMic(await openMic($('#micSel').value || getMicId())); } catch (e) { showStatus('Микрофон: ' + e.message, true); }
+  }
+  showStatus(on
+    ? '🔈 Режим колонок: прослушка голоса выключена, включено эхоподавление. Голос записывается, но для чистой записи лучше наушники.'
+    : '🎧 Режим наушников: голос с эффектами слышен в реальном времени. Если пропадает звук — вы не в наушниках, уберите фейдер «СЛУХ».');
+}
+$('#monYes').addEventListener('click', () => setSpeakerMode(false));
+$('#monNo').addEventListener('click', () => setSpeakerMode(true));
 $('#micSel').addEventListener('change', async e => {
   try { localStorage.setItem('rm_mic', e.target.value); } catch (err) {}
   if (!S.mic) return;
-  try { attachMic(await openMic(e.target.value)); setTimeout(rebindOutput, 400); }
+  try { attachMic(await openMic(e.target.value)); rebindOutput(); }
   catch (err) { showStatus('Не удалось переключить микрофон: ' + err.message, true); }
 });
 navigator.mediaDevices?.addEventListener('devicechange', () => {
