@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rap Machine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="logo">RAP<span>MACHINE</span></div>
+    <div class="beat-info" id="beatInfo">Бит не выбран</div>
+    <div class="mic-status" id="micStatus">🎙 микрофон выключен</div>
+  </header>
+
+  <section class="stage">
+    <div class="stage-head">
+      <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+      <div class="bar-count" id="barCount">—</div>
+      <div class="rec-ind" id="recInd">● REC <span id="recTime">0:00</span></div>
+    </div>
+    <div class="countdown" id="countdown"></div>
+    <div class="lyrics-viewport">
+      <div class="lyrics" id="lyrics"></div>
+    </div>
+  </section>
+
+  <section class="transport">
+    <div class="group">
+      <label>Стиль
+        <select id="style">
+          <option value="random">🎲 Случайный</option>
+          <option value="boombap">Boom Bap</option>
+          <option value="trap">Trap</option>
+          <option value="drill">Drill</option>
+          <option value="lofi">Lo-Fi</option>
+          <option value="gfunk">G-Funk</option>
+        </select>
+      </label>
+      <label>Куплет
+        <select id="verseLen">
+          <option value="8">8 строк</option>
+          <option value="16" selected>16 строк</option>
+          <option value="24">24 строки</option>
+        </select>
+      </label>
+    </div>
+    <div class="group buttons">
+      <button id="btnNewBeat" class="btn">🎲 Новый бит</button>
+      <button id="btnPlay" class="btn">▶ Репетиция</button>
+      <button id="btnRec" class="btn rec">● ЗАПИСЬ</button>
+      <button id="btnStop" class="btn" disabled>■ Стоп</button>
+    </div>
+    <div class="group prompt-row">
+      <input id="topic" type="text" placeholder="Тема текста / промпт: например «ночной город и мечты»">
+      <button id="btnGenText" class="btn small">✨ Текст по теме</button>
+      <button id="btnKey" class="btn small" title="Ключ Claude API для генерации текста нейросетью">🔑</button>
+    </div>
+    <div class="group buttons">
+      <button id="btnNewText" class="btn small">🎲 Случайный текст</button>
+      <button id="btnOwnText" class="btn small">✎ Свой текст</button>
+      <label class="btn small file">📂 Свой бит<input type="file" id="beatFile" accept="audio/*" hidden></label>
+      <label class="bpm" id="bpmWrap" hidden>BPM <input type="number" id="beatBpm" value="90" min="50" max="200"></label>
+    </div>
+  </section>
+
+  <section class="console">
+    <div class="presets" id="presets"></div>
+    <div class="desk">
+      <div class="strips" id="strips"></div>
+      <div class="master" id="master">
+        <div class="meters"><div class="meter"><b id="vuVocal"></b><span>VOX</span></div><div class="meter"><b id="vuMix"></b><span>MIX</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="takes">
+    <h2>Записи</h2>
+    <div id="takes" class="take-list"><p class="empty">Пока нет записей. Нажмите «● ЗАПИСЬ» и читайте текст под бит.</p></div>
+  </section>
+
+  <dialog id="textDialog">
+    <form method="dialog">
+      <h3>Свой текст</h3>
+      <p>Одна строка = одна фраза под бит. Оставьте пустым, чтобы вернуться к случайному тексту.</p>
+      <textarea id="ownText" rows="12" placeholder="Первая строка&#10;Вторая строка&#10;..."></textarea>
+      <div class="dlg-buttons"><button value="cancel" class="btn small">Отмена</button><button value="ok" class="btn small">Готово</button></div>
+    </form>
+  </dialog>
+
+  <script src="lyrics.js"></script>
+  <script src="fx.js"></script>
+  <script src="beats.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
