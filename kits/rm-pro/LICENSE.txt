@@ -1,0 +1,2 @@
+Rap Machine Pro Kit — synthesized by tools/make-kit.js.
+CC0 1.0 Universal: public domain, free for any use, no attribution required.

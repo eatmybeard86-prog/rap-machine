@@ -191,6 +191,7 @@ async function ensureAudio() {
   S.anaM = ctx.createAnalyser(); S.anaM.fftSize = 1024; S.mixBus.connect(S.anaM);
   S.engine = new BeatEngine(ctx, S.beatBus);
   S.engine.setPattern(S.pattern);
+  S.engine.setKit(S.kits[$('#kitSel').value] || null);
   applyParams();
 }
 
@@ -283,6 +284,34 @@ function showBeatInfo() {
     : `${S.pattern.name} · ${S.pattern.bpm} BPM · ${S.pattern.key}`;
 }
 
+// ---------- Киты ----------
+S.kits = {};
+function addKitOption(id, kit) {
+  S.kits[id] = kit;
+  let o = [...$('#kitSel').options].find(x => x.value === id);
+  if (!o) { o = new Option('', id); $('#kitSel').add(o); }
+  o.textContent = `${kit.name} (${kit.count})`;
+}
+function useKit(id) {
+  $('#kitSel').value = id;
+  if (S.engine) {
+    S.engine.setKit(S.kits[id] || null);
+    if (S.mode === 'rehearse') S.engine.start();
+  }
+}
+async function loadBuiltinKits() {
+  try {
+    const list = await (await fetch('kits/index.json')).json();
+    for (const [i, entry] of list.entries()) {
+      const kit = await loadKitFromIndex(entry);
+      addKitOption('k' + i, kit);
+      if (i === 0) useKit('k0');
+    }
+  } catch (e) {
+    console.warn('Киты не загрузились (откройте через start.bat):', e);
+  }
+}
+
 function getKey() { try { return localStorage.getItem('rm_api_key') || ''; } catch (e) { return ''; } }
 
 async function themedLyrics() {
@@ -350,7 +379,7 @@ async function testSound() {
   try {
     await ensureAudio();
     const was = S.engine.playing;
-    if (!was) { S.engine.setPattern(S.pattern); S.engine.start(0.05); setTimeout(() => { if (!S.mode) S.engine.stop(); }, 2500); }
+    if (!was) { S.engine.setPattern(S.pattern); S.engine.introBars = 0; S.engine.start(0.05); setTimeout(() => { if (!S.mode) S.engine.stop(); }, 2500); }
     const t = S.ctx.currentTime, o = S.ctx.createOscillator(), g = S.ctx.createGain();
     o.frequency.value = 660; g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
     o.connect(g).connect(S.ctx.destination); o.start(t); o.stop(t + 0.45);
@@ -372,6 +401,7 @@ async function startSessionInner(mode) {
   stopSession();
   if (!S.lines.length) newLyrics();
   showLine(-1);
+  S.engine.introBars = S.engine.barsPerLine; // бочка и 808 вступают вместе с первой строкой
   S.engine.start(0.15);
   S.mode = mode;
   if (mode === 'rec') {
@@ -507,6 +537,21 @@ $('#btnPlay').addEventListener('click', () => (S.mode === 'rehearse' ? stopSessi
 $('#btnRec').addEventListener('click', () => startSession('rec'));
 $('#btnStop').addEventListener('click', stopSession);
 $('#btnTest').addEventListener('click', testSound);
+$('#kitSel').addEventListener('change', e => useKit(e.target.value));
+$('#kitFolder').addEventListener('change', async e => {
+  const files = e.target.files; if (!files.length) return;
+  const name = (files[0].webkitRelativePath || 'Мой кит').split('/')[0];
+  showStatus(`⏳ Загружаю кит «${name}»…`);
+  try {
+    const kit = await loadKitFromFiles(files, name);
+    if (!kit.count) throw new Error('не нашёл файлов с понятными именами (kick, snare, clap, hat, 808…)');
+    const id = 'u' + Date.now();
+    addKitOption(id, kit);
+    useKit(id);
+    showStatus(`✅ Кит «${name}»: ` + Object.entries(kit.all).map(([c, a]) => `${c} ×${a.length}`).join(', '));
+  } catch (err) { showStatus('Кит не загрузился: ' + err.message, true); }
+  e.target.value = '';
+});
 async function setSpeakerMode(on) {
   S.speakerMode = on;
   $('#monBanner').hidden = true;
@@ -574,5 +619,6 @@ document.addEventListener('keydown', e => {
 
 buildConsole();
 newBeat();
+loadBuiltinKits();
 newLyrics();
 requestAnimationFrame(frame);

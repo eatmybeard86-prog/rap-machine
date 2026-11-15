@@ -1,0 +1,48 @@
+[
+  {
+    "name": "RM Pro (свой кит)",
+    "path": "kits/rm-pro/",
+    "files": {
+      "808": [
+        "808_clean.wav",
+        "808_dirty.wav",
+        "808_long.wav"
+      ],
+      "kick": [
+        "kick_punch.wav",
+        "kick_deep.wav",
+        "kick_hard.wav"
+      ],
+      "snare": [
+        "snare_crack.wav",
+        "snare_fat.wav"
+      ],
+      "clap": [
+        "clap_tight.wav",
+        "clap_wide.wav"
+      ],
+      "hat": [
+        "hat_tick.wav",
+        "hat_bright.wav"
+      ],
+      "ohat": [
+        "ohat.wav"
+      ],
+      "cowbell": [
+        "cowbell.wav"
+      ],
+      "rim": [
+        "rim.wav"
+      ],
+      "bell": [
+        "bell_glass.wav",
+        "bell_fm.wav"
+      ]
+    },
+    "roots": {
+      "808": 36,
+      "cowbell": 73,
+      "bell": 72
+    }
+  }
+]
