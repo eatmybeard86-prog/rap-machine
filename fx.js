@@ -61,8 +61,16 @@ registerProcessor('vox-proc', VoxProc);
 `;
 
 async function loadWorklet(ctx) {
-  const url = URL.createObjectURL(new Blob([WORKLET_SRC], { type: 'application/javascript' }));
-  await ctx.audioWorklet.addModule(url);
+  // При открытии index.html двойным кликом (file://) blob-URL может не загрузиться — пробуем data-URL
+  const urls = [
+    () => URL.createObjectURL(new Blob([WORKLET_SRC], { type: 'application/javascript' })),
+    () => 'data:application/javascript;charset=utf-8,' + encodeURIComponent(WORKLET_SRC),
+  ];
+  let lastErr;
+  for (const make of urls) {
+    try { await ctx.audioWorklet.addModule(make()); return; } catch (e) { lastErr = e; }
+  }
+  throw lastErr;
 }
 
 function distCurve(amount) {
