@@ -162,7 +162,12 @@ async function ensureAudio() {
   if (S.ctx) { if (S.ctx.state === 'suspended') await S.ctx.resume(); return; }
   const ctx = new AudioContext({ latencyHint: 'interactive' });
   S.ctx = ctx;
-  await loadWorklet(ctx);
+  ctx.resume();
+  try { await loadWorklet(ctx); } catch (e) {
+    console.warn('Worklet не загрузился:', e);
+    showStatus('⚠ Эффекты PITCH/DOUBLE/CRUSH недоступны в этом режиме — запустите через локальный сервер', true);
+  }
+  if (ctx.state !== 'running') await ctx.resume();
   S.chain = new VocalChain(ctx);
   S.beatBus = ctx.createGain();
   S.vocalOut = ctx.createGain();
@@ -278,7 +283,31 @@ function pickMime() {
   return ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'].find(m => MediaRecorder.isTypeSupported(m));
 }
 
+function showStatus(msg, warn) {
+  const el = $('#status');
+  el.textContent = msg; el.hidden = !msg; el.classList.toggle('warn', !!warn);
+}
+
+async function testSound() {
+  try {
+    await ensureAudio();
+    const was = S.engine.playing;
+    if (!was) { S.engine.setPattern(S.pattern); S.engine.start(0.05); setTimeout(() => { if (!S.mode) S.engine.stop(); }, 2500); }
+    const t = S.ctx.currentTime, o = S.ctx.createOscillator(), g = S.ctx.createGain();
+    o.frequency.value = 660; g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.connect(g).connect(S.ctx.destination); o.start(t); o.stop(t + 0.45);
+    showStatus(`🔊 Звук: ${S.ctx.state === 'running' ? 'работает' : 'НЕ запущен (' + S.ctx.state + ')'} · ${S.ctx.sampleRate} Гц · громкость бита ${Math.round(values.beat * 100)}%`, S.ctx.state !== 'running');
+  } catch (e) { showStatus('Ошибка звука: ' + e.message, true); }
+}
+
 async function startSession(mode) {
+  try { await startSessionInner(mode); } catch (e) {
+    console.error(e);
+    showStatus('Ошибка: ' + e.message, true);
+  }
+}
+
+async function startSessionInner(mode) {
   await ensureAudio();
   const micOk = await ensureMic();
   if (mode === 'rec' && !micOk) return;
@@ -419,6 +448,8 @@ $('#style').addEventListener('change', newBeat);
 $('#btnPlay').addEventListener('click', () => (S.mode === 'rehearse' ? stopSession() : startSession('rehearse')));
 $('#btnRec').addEventListener('click', () => startSession('rec'));
 $('#btnStop').addEventListener('click', stopSession);
+$('#btnTest').addEventListener('click', testSound);
+if (!window.AudioContext) showStatus('Этот браузер не поддерживает Web Audio — откройте в Chrome или Edge', true);
 $('#btnNewText').addEventListener('click', () => { S.ownLines = null; newLyrics(); });
 $('#btnGenText').addEventListener('click', themedLyrics);
 $('#topic').addEventListener('keydown', e => { if (e.key === 'Enter') themedLyrics(); });

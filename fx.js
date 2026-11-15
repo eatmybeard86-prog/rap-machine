@@ -157,7 +157,14 @@ class VocalChain {
     const c = ctx;
     this.input = c.createGain();
     this.hp = c.createBiquadFilter(); this.hp.type = 'highpass'; this.hp.Q.value = 0.7;
-    this.proc = new AudioWorkletNode(c, 'vox-proc', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+    try {
+      this.proc = new AudioWorkletNode(c, 'vox-proc', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+    } catch (e) {
+      // Ворклет недоступен — работаем без питча/краша, но всё остальное (и бит) играет
+      console.warn('AudioWorklet недоступен:', e);
+      this.proc = c.createGain();
+      this.noWorklet = true;
+    }
     this.shaper = c.createWaveShaper(); this.shaper.oversample = '4x';
     this.distLp = c.createBiquadFilter(); this.distLp.type = 'lowpass';
     this.distComp = c.createGain();
@@ -213,7 +220,10 @@ class VocalChain {
     this.revSizeApplied = 0;
   }
 
-  P(name) { return this.proc.parameters.get(name); }
+  P(name) {
+    if (this.noWorklet) return { setTargetAtTime() {}, setValueAtTime() {} };
+    return this.proc.parameters.get(name);
+  }
 
   // Эффективное значение с учётом кнопки ON канала
   eff(stripId, p) {
