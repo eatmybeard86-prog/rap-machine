@@ -187,22 +187,60 @@ async function ensureAudio() {
   applyParams();
 }
 
+function getMicId() { try { return localStorage.getItem('rm_mic') || ''; } catch (e) { return ''; } }
+
+function openMic(id) {
+  return navigator.mediaDevices.getUserMedia({
+    audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+  });
+}
+
+function attachMic(stream) {
+  if (S.micStream) S.micStream.getTracks().forEach(t => t.stop());
+  if (S.mic) S.mic.disconnect();
+  S.micStream = stream;
+  S.mic = S.ctx.createMediaStreamSource(stream);
+  S.mic.connect(S.chain.input);
+  $('#micStatus').textContent = '🎙 ' + (stream.getAudioTracks()[0]?.label || 'микрофон включён');
+  $('#micStatus').classList.add('on');
+}
+
+async function fillMicList() {
+  const sel = $('#micSel');
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+  const cur = S.micStream?.getAudioTracks()[0]?.getSettings().deviceId;
+  sel.innerHTML = '';
+  devs.forEach((d, i) => sel.add(new Option(d.label || `Микрофон ${i + 1}`, d.deviceId)));
+  if (cur) sel.value = cur;
+  sel.hidden = devs.length < 2;
+}
+
+// Bluetooth-наушники при включении микрофона переключаются в режим гарнитуры,
+// и Windows меняет устройство вывода. Переподключаем вывод к текущему устройству.
+async function rebindOutput() {
+  if (!S.ctx || !S.ctx.setSinkId) return;
+  try {
+    await S.ctx.setSinkId({ type: 'none' });
+    await S.ctx.setSinkId('');
+    if (S.ctx.state !== 'running') await S.ctx.resume();
+  } catch (e) { console.warn('setSinkId:', e); }
+}
+
 async function ensureMic() {
   if (S.mic) return true;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-    });
-    S.mic = S.ctx.createMediaStreamSource(stream);
-    S.mic.connect(S.chain.input);
-    $('#micStatus').textContent = '🎙 микрофон включён';
-    $('#micStatus').classList.add('on');
-    if (values.monitor === 0 && confirm('Вы в наушниках?\n\nВключить прослушку своего голоса с эффектами в реальном времени?\n(Без наушников из колонок будет фон и свист.)')) {
-      setParam('monitor', 0.9);
+    let stream;
+    try { stream = await openMic(getMicId()); } catch (e) {
+      if (!getMicId()) throw e;
+      stream = await openMic('');
     }
+    attachMic(stream);
+    await fillMicList();
+    setTimeout(rebindOutput, 400);
+    if (values.monitor === 0) $('#monBanner').hidden = false;
     return true;
   } catch (e) {
-    alert('Нет доступа к микрофону: ' + e.message);
+    showStatus('Нет доступа к микрофону: ' + e.message, true);
     return false;
   }
 }
@@ -411,7 +449,7 @@ function level(an) {
 
 function frame() {
   requestAnimationFrame(frame);
-  if (S.ctx) {
+  if (S.anaM) {
     $('#vuVocal').style.height = level(S.anaV) * 100 + '%';
     $('#vuMix').style.height = level(S.anaM) * 100 + '%';
   }
@@ -449,6 +487,19 @@ $('#btnPlay').addEventListener('click', () => (S.mode === 'rehearse' ? stopSessi
 $('#btnRec').addEventListener('click', () => startSession('rec'));
 $('#btnStop').addEventListener('click', stopSession);
 $('#btnTest').addEventListener('click', testSound);
+$('#monYes').addEventListener('click', () => { setParam('monitor', 0.9); $('#monBanner').hidden = true; });
+$('#monNo').addEventListener('click', () => { $('#monBanner').hidden = true; });
+$('#micSel').addEventListener('change', async e => {
+  try { localStorage.setItem('rm_mic', e.target.value); } catch (err) {}
+  if (!S.mic) return;
+  try { attachMic(await openMic(e.target.value)); setTimeout(rebindOutput, 400); }
+  catch (err) { showStatus('Не удалось переключить микрофон: ' + err.message, true); }
+});
+navigator.mediaDevices?.addEventListener('devicechange', () => {
+  if (!S.ctx) return;
+  setTimeout(rebindOutput, 500);
+  if (S.mic) fillMicList();
+});
 if (!window.AudioContext) showStatus('Этот браузер не поддерживает Web Audio — откройте в Chrome или Edge', true);
 $('#btnNewText').addEventListener('click', () => { S.ownLines = null; newLyrics(); });
 $('#btnGenText').addEventListener('click', themedLyrics);

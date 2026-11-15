@@ -12,8 +12,15 @@
     <div class="beat-info" id="beatInfo">Бит не выбран</div>
     <button id="btnTest" class="btn small">🔊 Тест звука</button>
     <div class="mic-status" id="micStatus">🎙 микрофон выключен</div>
+    <select id="micSel" title="Микрофон" hidden></select>
   </header>
   <div class="status" id="status" hidden></div>
+  <div class="status mon" id="monBanner" hidden>
+    🎧 Вы в наушниках? Включить прослушку своего голоса с эффектами?
+    <button id="monYes" class="btn small">Да, включить</button>
+    <button id="monNo" class="btn small">Нет, я через колонки</button>
+    <div class="hint">Bluetooth-наушники: если звук пропадает или стал «как в телефоне», выберите справа вверху микрофон ноутбука или веб-камеры, а не микрофон наушников.</div>
+  </div>
 
   <section class="stage">
     <div class="stage-head">

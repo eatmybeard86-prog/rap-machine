@@ -25,6 +25,9 @@ button, select, input { font: inherit; }
 .logo span { color: var(--accent); margin-left: 4px; }
 .beat-info { padding: 6px 12px; border-radius: 6px; background: #0d1a33; color: #8fbaff; font-family: Consolas, monospace; font-size: 14px; border: 1px solid #1d3566; }
 .status { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: #0f2a1a; color: #8fffb8; border: 1px solid #1f5a35; font-size: 14px; }
+.status.mon { background: #0d1a33; color: #cfe0ff; border-color: #1f3a70; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.status .hint { flex-basis: 100%; font-size: 12px; color: #8a9bc0; }
+#micSel { max-width: 260px; }
 .status.warn { background: #3a1015; color: #ffb3bd; border-color: #7a2030; }
 .mic-status { margin-left: auto; color: var(--muted); font-size: 14px; }
 .mic-status.on { color: var(--green); }
